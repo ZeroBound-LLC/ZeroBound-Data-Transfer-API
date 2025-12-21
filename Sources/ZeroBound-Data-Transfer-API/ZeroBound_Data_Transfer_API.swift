@@ -25,26 +25,3 @@ struct AuthenticationMiddleware: ClientMiddleware {
     }
 }
 
-// Token storage (could be Keychain, actor, etc.)
-actor TokenStore {
-    private var token: String?
-    
-    func setToken(_ token: String?) {
-        self.token = token
-    }
-    
-    func getToken() -> String? {
-        token
-    }
-}
-
-let tokenStore = TokenStore()
-
-// Create client with middleware
-let client = Client(
-    serverURL: URL(string: "https://api.zerobound.app/v1")!,
-    transport: URLSessionTransport(),
-    middlewares: [
-        AuthenticationMiddleware { await tokenStore.getToken() }
-    ]
-)
