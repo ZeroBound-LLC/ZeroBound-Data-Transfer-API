@@ -1,0 +1,613 @@
+openapi: 3.0.1
+info:
+  title: ZeroBound-Data-Transfer-API
+  description: >
+    API for ZeroBound debt payoff application. Server transforms raw Plaid data
+    into 
+
+    debt-focused DTOs for iOS client consumption. Plaid data updates
+    automatically via 
+
+    webhooks - no manual refresh endpoints to avoid per-call API costs.
+  version: 1.0.0
+  contact:
+    name: ZeroBound Support
+tags:
+  - name: accounts
+  - name: plaid
+paths:
+  /accounts:
+    get:
+      summary: List all linked accounts
+      deprecated: false
+      description: Returns all debt and asset accounts linked via Plaid or manual entry
+      tags:
+        - accounts
+      parameters:
+        - name: type
+          in: query
+          description: Filter by account type
+          required: false
+          schema:
+            type: string
+            enum:
+              - debt
+              - asset
+              - all
+            default: all
+        - name: include_closed
+          in: query
+          description: Include closed/paid-off accounts
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  last_sync:
+                    type: string
+                    format: date-time
+                    description: Last successful automatic Plaid sync via webhooks
+                    nullable: true
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+      security:
+        - BearerAuth: []
+  /accounts/{accountId}:
+    get:
+      summary: Get account details
+      deprecated: false
+      description: Returns detailed information for a specific account
+      tags:
+        - accounts
+      parameters:
+        - name: accountId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetail'
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: NOT_FOUND
+                message: The requested resource was not found
+          headers: {}
+      security:
+        - BearerAuth: []
+  /accounts/{accountId}/payment-history:
+    get:
+      summary: Get payment history
+      deprecated: false
+      description: Returns payment history for a debt account
+      tags:
+        - accounts
+      parameters:
+        - name: accountId
+          in: path
+          description: ''
+          required: true
+          example: ''
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Number of payments to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Payment history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Payment'
+                  total_count:
+                    type: integer
+                  has_more:
+                    type: boolean
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: NOT_FOUND
+                message: The requested resource was not found
+          headers: {}
+      security:
+        - BearerAuth: []
+  /plaid/link-token:
+    post:
+      summary: Create Plaid Link token
+      deprecated: false
+      description: >
+        Creates a link_token for initializing Plaid Link. Used for connecting
+        new 
+
+        financial institutions or adding additional accounts.
+      tags:
+        - plaid
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                institution_id:
+                  type: string
+                  description: Optional institution ID to pre-select in Link flow
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: Link token created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - link_token
+                  - expiration
+                properties:
+                  link_token:
+                    type: string
+                    description: Token to initialize Plaid Link
+                  expiration:
+                    type: string
+                    format: date-time
+                    description: Token expiration time (typically 30 minutes)
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+        '500':
+          description: Failed to create link token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      security:
+        - BearerAuth: []
+  /plaid/link-token/update:
+    post:
+      summary: Create update mode link token
+      deprecated: false
+      description: |
+        Creates a link_token in update mode for re-authenticating an existing 
+        Item. Used when login credentials change or MFA is required.
+      tags:
+        - plaid
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - item_id
+              properties:
+                item_id:
+                  type: string
+                  description: Internal item ID that needs re-authentication
+        required: true
+      responses:
+        '200':
+          description: Update mode link token created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - link_token
+                  - expiration
+                properties:
+                  link_token:
+                    type: string
+                  expiration:
+                    type: string
+                    format: date-time
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: NOT_FOUND
+                message: The requested resource was not found
+          headers: {}
+        '500':
+          description: Failed to create update link token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      security:
+        - BearerAuth: []
+  /plaid/exchange-token:
+    post:
+      summary: Exchange public token for access token
+      deprecated: false
+      description: |
+        Exchanges the public_token received from Plaid Link for an access_token.
+        Server stores access_token securely and initiates account data fetch.
+      tags:
+        - plaid
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - public_token
+              properties:
+                public_token:
+                  type: string
+                  description: Public token from successful Plaid Link flow
+        required: true
+      responses:
+        '200':
+          description: Token exchanged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - item_id
+                  - accounts_linked
+                properties:
+                  item_id:
+                    type: string
+                    description: Internal identifier for this Plaid Item
+                  accounts_linked:
+                    type: integer
+                    description: Number of accounts discovered and linked
+                  institution_name:
+                    type: string
+                    nullable: true
+          headers: {}
+        '400':
+          description: Invalid public token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+        '401':
+          description: Authentication required or token invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error_code: UNAUTHORIZED
+                message: Invalid or expired authentication token
+          headers: {}
+        '500':
+          description: Token exchange failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    Account:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - subtype
+        - current_balance
+        - data_source
+        - is_active
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Account name (masked if from Plaid)
+          example: Chase Freedom (••1234)
+        type:
+          type: string
+          enum:
+            - credit
+            - loan
+            - depository
+          description: High-level account type
+        subtype:
+          type: string
+          enum:
+            - credit_card
+            - auto_loan
+            - student_loan
+            - mortgage
+            - personal_loan
+            - medical_debt
+            - checking
+            - savings
+            - other
+          description: Specific account subtype
+        current_balance:
+          type: number
+          format: decimal
+          description: Current balance (positive for debt, negative for assets)
+        available_credit:
+          type: number
+          format: decimal
+          description: Available credit for credit accounts
+          nullable: true
+        data_source:
+          type: string
+          enum:
+            - plaid
+            - manual
+          description: Source of account data
+        is_active:
+          type: boolean
+          description: Whether account is actively being paid
+        institution_name:
+          type: string
+          nullable: true
+          example: Chase
+        last_updated:
+          type: string
+          format: date-time
+          description: Last time account data was updated
+    AccountDetail:
+      allOf:
+        - $ref: '#/components/schemas/Account'
+        - type: object
+          properties:
+            apr:
+              type: number
+              format: decimal
+              description: Annual percentage rate (for debt accounts)
+              minimum: 0
+              maximum: 100
+              nullable: true
+            minimum_payment:
+              type: number
+              format: decimal
+              description: Current minimum payment due
+              nullable: true
+            payment_due_date:
+              type: string
+              format: date
+              description: Next payment due date
+              nullable: true
+            last_payment:
+              $ref: '#/components/schemas/Payment'
+              nullable: true
+            liability_details:
+              $ref: '#/components/schemas/LiabilityDetails'
+              description: Additional details from Plaid Liabilities API
+              nullable: true
+            interest_accrued_mtd:
+              type: number
+              format: decimal
+              description: Interest accrued month-to-date
+            origination_date:
+              type: string
+              format: date
+              description: Date account was opened
+              nullable: true
+    LiabilityDetails:
+      type: object
+      description: Additional liability information from Plaid
+      properties:
+        is_overdue:
+          type: boolean
+          nullable: true
+        last_statement_balance:
+          type: number
+          format: decimal
+          nullable: true
+        last_statement_date:
+          type: string
+          format: date
+          nullable: true
+        origination_principal:
+          type: number
+          format: decimal
+          description: Original loan amount
+          nullable: true
+        next_monthly_payment:
+          type: number
+          format: decimal
+          nullable: true
+        loan_term_months:
+          type: integer
+          description: Original loan term in months
+          nullable: true
+        maturity_date:
+          type: string
+          format: date
+          nullable: true
+        ytd_interest_paid:
+          type: number
+          format: decimal
+          description: Interest paid year-to-date
+          nullable: true
+        ytd_principal_paid:
+          type: number
+          format: decimal
+          description: Principal paid year-to-date
+          nullable: true
+    Payment:
+      type: object
+      required:
+        - id
+        - date
+        - amount
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        amount:
+          type: number
+          format: decimal
+        principal_portion:
+          type: number
+          format: decimal
+          description: Amount applied to principal
+          nullable: true
+        interest_portion:
+          type: number
+          format: decimal
+          description: Amount applied to interest
+          nullable: true
+        fees_portion:
+          type: number
+          format: decimal
+          description: Amount applied to fees
+          nullable: true
+        balance_after:
+          type: number
+          format: decimal
+          description: Account balance after payment
+          nullable: true
+        payment_method:
+          type: string
+          enum:
+            - auto_pay
+            - manual
+            - scheduled
+            - other
+          nullable: true
+        is_minimum_payment:
+          type: boolean
+          nullable: true
+    Error:
+      type: object
+      required:
+        - error_code
+        - message
+      properties:
+        error_code:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: The requested resource was not found
+        details:
+          type: object
+          additionalProperties: true
+          properties: {}
+          nullable: true
+    Unauthorized: &ref_0
+      $ref: '#/components/schemas/Error'
+    NotFound: *ref_0
+  responses: {}
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from authentication service
+servers: []
+security:
+  - BearerAuth: []
