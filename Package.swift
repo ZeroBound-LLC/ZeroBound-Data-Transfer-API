@@ -4,14 +4,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "ZeroBound-Data-Transfer-API",
+    name: "ZeroBoundDataTransferAPI",
     platforms: [
         .macOS(.v15),
     ],
     products: [
         .library(
-            name: "ZeroBound-Data-Transfer-API",
-            targets: ["ZeroBound-Data-Transfer-API"]
+            name: "ZeroBoundDataTransferAPI",
+            targets: ["ZeroBoundDataTransferAPI"]
         ),
     ],
     dependencies: [
@@ -22,7 +22,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ZeroBound-Data-Transfer-API",
+            name: "ZeroBoundDataTransferAPI",
             dependencies: [
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIVapor", package: "swift-openapi-vapor"),
