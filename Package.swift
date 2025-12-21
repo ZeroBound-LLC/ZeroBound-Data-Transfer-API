@@ -7,6 +7,7 @@ let package = Package(
     name: "ZeroBoundDataTransferAPI",
     platforms: [
         .macOS(.v15),
+        .iOS(.v16),
     ],
     products: [
         .library(
