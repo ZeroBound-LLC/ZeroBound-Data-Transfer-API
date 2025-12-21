@@ -1,5 +1,8 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
+import OpenAPIRuntime
+import HTTPTypes
+
 struct AuthenticationMiddleware: ClientMiddleware {
     
     private let tokenProvider: @Sendable () async -> String?
