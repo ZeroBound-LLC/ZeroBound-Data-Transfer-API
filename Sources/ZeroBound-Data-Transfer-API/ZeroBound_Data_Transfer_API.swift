@@ -2,6 +2,7 @@
 // https://docs.swift.org/swift-book
 import OpenAPIRuntime
 import HTTPTypes
+import Foundation
 
 struct AuthenticationMiddleware: ClientMiddleware {
     
