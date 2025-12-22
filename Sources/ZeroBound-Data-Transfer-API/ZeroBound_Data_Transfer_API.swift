@@ -4,7 +4,7 @@ import OpenAPIRuntime
 import HTTPTypes
 import Foundation
 
-struct AuthenticationMiddleware: ClientMiddleware {
+public struct AuthenticationMiddleware: ClientMiddleware {
     
     private let tokenProvider: @Sendable () async -> String?
     
@@ -12,7 +12,7 @@ struct AuthenticationMiddleware: ClientMiddleware {
         self.tokenProvider = tokenProvider
     }
     
-    func intercept(
+    public func intercept(
         _ request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
