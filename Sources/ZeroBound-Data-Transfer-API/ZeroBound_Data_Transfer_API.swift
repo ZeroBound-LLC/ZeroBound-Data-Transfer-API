@@ -8,7 +8,7 @@ public struct AuthenticationMiddleware: ClientMiddleware {
     
     private let tokenProvider: @Sendable () async -> String?
     
-    init(tokenProvider: @escaping @Sendable () async -> String?) {
+    public init(tokenProvider: @escaping @Sendable () async -> String?) {
         self.tokenProvider = tokenProvider
     }
     
