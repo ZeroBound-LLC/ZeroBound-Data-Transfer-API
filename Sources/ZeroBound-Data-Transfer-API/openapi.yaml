@@ -979,6 +979,31 @@ components:
           type: string
           format: uuid
           description: Associated Plaid Item (null for manual accounts)
+        apr:
+          type: string
+          format: decimal
+          description: Annual percentage rate (0-100 scale, e.g., "21.99")
+          examples:
+            - '21.99'
+        minimum_payment:
+          type: string
+          format: decimal
+          description: Current minimum payment due
+        payment_due_date:
+          type: string
+          format: date
+          description: Next payment due date
+        origination_date:
+          type: string
+          format: date
+          description: Date account was opened
+        origination_principal:
+          type: string
+          format: decimal
+          description: Original loan amount
+        loan_term_months:
+          type: integer
+          description: Original loan term in months
         created_at:
           type: string
           format: date-time
@@ -991,33 +1016,8 @@ components:
         - $ref: '#/components/schemas/Account'
         - type: object
           properties:
-            apr:
-              type: string
-              format: decimal
-              description: Annual percentage rate (0-100 scale, e.g., "21.99")
-              examples:
-                - '21.99'
-            minimum_payment:
-              type: string
-              format: decimal
-              description: Current minimum payment due
-            payment_due_date:
-              type: string
-              format: date
-              description: Next payment due date
             last_payment:
               $ref: '#/components/schemas/Payment'
-            origination_date:
-              type: string
-              format: date
-              description: Date account was opened
-            origination_principal:
-              type: string
-              format: decimal
-              description: Original loan amount
-            loan_term_months:
-              type: integer
-              description: Original loan term in months
             maturity_date:
               type: string
               format: date
