@@ -1106,12 +1106,23 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        type:
+          $ref: '#/components/schemas/AccountType'
+        subtype:
+          $ref: '#/components/schemas/AccountSubtype'
+        data_source:
+          $ref: '#/components/schemas/DataSource'
         is_hidden:
           type: boolean
         is_active:
           type: boolean
+        institution_name:
+          type: string
         custom_sort_order:
           type: integer
+        plaid_item_id:
+          type: string
+          format: uuid
         current_balance:
           type: string
           format: decimal
@@ -1127,6 +1138,15 @@ components:
         payment_due_date:
           type: string
           format: date
+        origination_date:
+          type: string
+          format: date
+        origination_principal:
+          type: string
+          format: decimal
+        loan_term_months:
+          type: integer
+          minimum: 1
     AccountType:
       type: string
       enum:
