@@ -1301,6 +1301,19 @@ components:
           type: boolean
         notification_preferences:
           $ref: '#/components/schemas/NotificationPreferences'
+        user_level:
+          type: integer
+          minimum: 1
+          description: The user's current gamification level based on payment activity
+        user_experience_progress:
+          type: number
+          format: double
+          minimum: 0
+          description: Progress toward the next level
+        payment_streak:
+          type: integer
+          minimum: 0
+          description: Number of consecutive on-time payments
         created_at:
           type: string
           format: date-time
@@ -1322,6 +1335,19 @@ components:
           type: boolean
         notification_preferences:
           $ref: '#/components/schemas/NotificationPreferences'
+        user_level:
+          type: integer
+          minimum: 1
+          description: The user's current gamification level based on payment activity
+        user_experience_progress:
+          type: number
+          format: double
+          minimum: 0
+          description: Progress toward the next level
+        payment_streak:
+          type: integer
+          minimum: 0
+          description: Number of consecutive on-time payments
     PayoffStrategy:
       type: string
       enum:
